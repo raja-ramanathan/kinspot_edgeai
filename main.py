@@ -10,9 +10,18 @@ from torchmetrics import ConfusionMatrix
 from mlxtend.plotting import plot_confusion_matrix
 import matplotlib.pyplot as plt
 from pathlib import Path
+from PIL import Image
+from pillow_heif import register_heif_opener
 
-SAVE_DIR="model"
+register_heif_opener()
+
 CUSTOM_MODEL_NAME='kinspotmodel'
+SAVE_DIR=Path(f"model/{CUSTOM_MODEL_NAME}")
+TEST_DIR=Path("data/test") # testing dataset dir
+TRAIN_DIR=Path("data/family_photos/train") # training dataset dir
+VAL_DIR=Path("data/family_photos/train") # validation dataset dir
+
+
 MODEL_NAME='google/vit-base-patch16-224'
 DEVICE = torch.device('mps' if torch.mps.is_available() else 'cpu')
 
@@ -101,16 +110,62 @@ class KinSpotModel:
         plt.close(fig)  
 
         # Save model
-        self.model.save_pretrained(f"model/{CUSTOM_MODEL_NAME}")
+        self.model.save_pretrained(SAVE_DIR)
 
-    def _infer(self):
-        pass
+    def _predict_single_image(self,image_path):
+        # Open image
+        try:
+            img = Image.open(image_path).convert("RGB")
+        except Exception as e:
+            print(f"Error opening {image_path}: {e}")
+            return None, None
+
+        # Preprocess (resize to 224×224, normalize, etc.)
+        inputs = self.processor(images=img, return_tensors="pt")
+        inputs = inputs.to(DEVICE)
+
+        # prepare model in eval model
+        kinSpotModel = ViTForImageClassification.from_pretrained(SAVE_DIR)
+        kinSpotModel.to(DEVICE)
+        kinSpotModel.eval() 
+
+        # Run model
+        with torch.inference_mode():
+            outputs = kinSpotModel(**inputs)
+            logits = outputs.logits  # [1, 10]
+            probabilities = torch.softmax(logits, dim=-1)[0]  # [10]
+            predicted_class_idx = torch.argmax(probabilities).item()
+            confidence = probabilities[predicted_class_idx].item()
+            print(logits, probabilities, predicted_class_idx, confidence)
+        predicted_label = self.class_names[predicted_class_idx]
+        return predicted_label, confidence
+
+
+    def _test(self):
+        """ Infer & test using selective images in test directory """
+        for person in os.listdir(TEST_DIR):
+            if person.startswith('.') or not os.path.isdir(os.path.join(TEST_DIR, person)):
+                continue  # Skip .DS_Store, hidden files, stray files, etc.
+            person_dir = os.path.join(TEST_DIR, person)
+            for img_file in os.listdir(person_dir):
+                test_image_path = os.path.join(person_dir, img_file)
+                print("======")
+                print(f"Processing file: {test_image_path} for testing...")
+                try:
+                    predicted_label, confidence = self._predict_single_image(test_image_path)
+                    print("expected_label=", person, "predicted_label=", predicted_label, " confidence=", confidence)
+                except Exception as e:
+                    print(f"Error processing {img_file}: {e}")         
 
     def process(self):
+        # train when saved model is not available
         if not self._is_model_saved():
             print(f"Model NOT found in {SAVE_DIR} → Start training")
             self._train()
-        self._infer()
+        else:
+            print(f"Saved model found in {SAVE_DIR} → Skip training")
+        
+        self._test()
 
 
 def main():

@@ -65,5 +65,4 @@ for person in os.listdir(input_dir):
             else:
                 print(f"No faces in {img_file}")
         except Exception as e:
-            raise e
-            #print(f"Error processing {img_file}: {e}")
+            print(f"Error processing {img_file}: {e}")
