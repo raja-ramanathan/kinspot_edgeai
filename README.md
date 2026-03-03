@@ -9,7 +9,7 @@ Trained and deployed a Vision Transformer for multi-person classification using 
 - uv sync
 
 ##  Data Directory Setup
-
+```
 data/ <- overall dataset folder
     train/ <- training images
         mom/ <- class name as folder name
@@ -35,7 +35,7 @@ data/ <- overall dataset folder
         bro/
             image167.jpeg
             ...
-
+```
 ## Train/Validation/Testing
 
 - uv run main.py
