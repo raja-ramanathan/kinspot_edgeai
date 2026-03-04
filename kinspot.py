@@ -1,18 +1,20 @@
 import cv2
 import torch
 import numpy as np
+import time
 from torchvision import transforms
 from pathlib import Path
-from transformers import ViTForImageClassification
-import time
+from transformers import ViTForImageClassification, ViTImageProcessor
 
-
+DEVICE = torch.device('mps' if torch.mps.is_available() else 'cpu')
+MODEL_NAME='google/vit-base-patch16-224'
 CUSTOM_MODEL_NAME='kinspotmodel'
 SAVE_DIR=Path(f"model/{CUSTOM_MODEL_NAME}")
-DEVICE = torch.device('mps' if torch.mps.is_available() else 'cpu')
-kinSpotModel = ViTForImageClassification.from_pretrained(SAVE_DIR)
-kinSpotModel.to(DEVICE)
-kinSpotModel.eval()
+model = ViTForImageClassification.from_pretrained(SAVE_DIR)
+model.to(DEVICE)
+print(model.config.id2label)
+processor = ViTImageProcessor.from_pretrained(MODEL_NAME)
+model.eval()
 
 cap = cv2.VideoCapture(0, cv2.CAP_AVFOUNDATION)
 print("Is opened:", cap.isOpened())
@@ -27,16 +29,13 @@ label_map = {
 
 
 def main():    
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
     transform = transforms.Compose([
         transforms.ToPILImage(),
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]
-        )
+        transforms.Normalize(mean=processor.image_mean, std=processor.image_std)
     ])
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
     print("Starting....")
     label = "UNKNOWN"
     while True:
@@ -47,11 +46,11 @@ def main():
         faces = face_cascade.detectMultiScale(gray, 1.3, 5)
         for (x, y, w, h) in faces:
             face = frame[y:y+h, x:x+w]
-
+            face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
             input_tensor = transform(face).unsqueeze(0).to(DEVICE)
 
             with torch.no_grad():
-                outputs = kinSpotModel(pixel_values=input_tensor)
+                outputs = model(pixel_values=input_tensor)
                 logits = outputs.logits  # [1, 10]
                 probabilities = torch.softmax(logits, dim=-1)[0]  # [10]
                 predicted_class_idx = torch.argmax(probabilities).item()

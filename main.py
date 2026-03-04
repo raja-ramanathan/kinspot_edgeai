@@ -168,8 +168,12 @@ class KinSpotModel:
             print(f"Saved model found in {SAVE_DIR} → Skip training")        
         self._test()
 
-    def get_model(self):
-        return self.model()
+    def get_saved_model(self):
+        """ returns model """
+        model = ViTForImageClassification.from_pretrained(SAVE_DIR)
+        model.to(DEVICE)
+        model.eval()
+        return model
 
 
 def main():
