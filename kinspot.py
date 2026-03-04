@@ -2,39 +2,16 @@ import cv2
 import torch
 import numpy as np
 import time
-from torchvision import transforms
-from pathlib import Path
-from transformers import ViTForImageClassification, ViTImageProcessor
-
-DEVICE = torch.device('mps' if torch.mps.is_available() else 'cpu')
-MODEL_NAME='google/vit-base-patch16-224'
-CUSTOM_MODEL_NAME='kinspotmodel'
-SAVE_DIR=Path(f"model/{CUSTOM_MODEL_NAME}")
-model = ViTForImageClassification.from_pretrained(SAVE_DIR)
-model.to(DEVICE)
-print(model.config.id2label)
-processor = ViTImageProcessor.from_pretrained(MODEL_NAME)
-model.eval()
+from main import KinSpotModel, DEVICE
 
 cap = cv2.VideoCapture(0, cv2.CAP_AVFOUNDATION)
-print("Is opened:", cap.isOpened())
 time.sleep(5)
 
-confidence_threshold = 0.75  # adjust as needed
+confidence_threshold = 0.85  # adjust as needed
+customModel = KinSpotModel()
 
-label_map = {
-    0: "anuja",
-    1: "raja",
-}
-
-
-def main():    
-    transform = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=processor.image_mean, std=processor.image_std)
-    ])
+def main():   
+    class_names, model, transform = customModel.get_model_info() 
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
     print("Starting....")
     label = "UNKNOWN"
@@ -58,7 +35,7 @@ def main():
                 print(logits, probabilities, predicted_class_idx, confidence)
 
             if confidence > confidence_threshold:
-                label = label_map[predicted_class_idx]
+                label = class_names[predicted_class_idx]
             else:
                 label = "Not a family member"
 
@@ -79,8 +56,6 @@ def main():
 
     cap.release()
     cv2.destroyAllWindows()
-
-    print("label is", label)
 
 if __name__ == "__main__":
     main()
