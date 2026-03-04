@@ -9,6 +9,7 @@ dependencies = [
     "deepface>=0.0.99",
     "matplotlib>=3.9.4",
     "mlxtend>=0.23.4",
+    "opencv-python>=4.13.0.92",
     "pandas>=2.3.3",
     "pillow>=11.3.0",
     "pillow-heif>=1.1.1",

@@ -40,10 +40,12 @@ class KinSpotModel:
             transforms.ToTensor(),
             transforms.Normalize(mean=self.processor.image_mean, std=self.processor.image_std),
         ])
-        # Load pre-trained DeiT and modify head
-        self.model = ViTForImageClassification.from_pretrained(MODEL_NAME,
-            num_labels=self.num_classes,ignore_mismatched_sizes=True  # Allows replacing the head
-        )
+        # Load saved or pre-trained mode.
+        if self._is_model_saved():
+            self.model = ViTForImageClassification.from_pretrained(SAVE_DIR)
+        else:
+            self.model = ViTForImageClassification.from_pretrained(MODEL_NAME,num_labels=self.num_classes,
+               ignore_mismatched_sizes=True) 
         self.model.to(DEVICE)
         self.optimizer = AdamW(self.model.parameters(), lr=self.learning_rate)
 
@@ -155,7 +157,7 @@ class KinSpotModel:
                     predicted_label, confidence = self._predict_single_image(test_image_path)
                     print("expected_label=", person, "predicted_label=", predicted_label, " confidence=", confidence)
                 except Exception as e:
-                    print(f"Error processing {img_file}: {e}")         
+                    print(f"Error processing {img_file}: {e}")
 
     def process(self):
         # train when saved model is not available
@@ -163,9 +165,11 @@ class KinSpotModel:
             print(f"Model NOT found in {SAVE_DIR} → Start training")
             self._train()
         else:
-            print(f"Saved model found in {SAVE_DIR} → Skip training")
-        
+            print(f"Saved model found in {SAVE_DIR} → Skip training")        
         self._test()
+
+    def get_model(self):
+        return self.model()
 
 
 def main():
