@@ -2,16 +2,18 @@ import cv2
 import torch
 import numpy as np
 import time
-from main import KinSpotModel, DEVICE
+from main import KinspotModelLoader, DEVICE
 
 cap = cv2.VideoCapture(0, cv2.CAP_AVFOUNDATION)
 time.sleep(5)
 
 confidence_threshold = 0.85  # adjust as needed
-customModel = KinSpotModel()
+modelLoader = KinspotModelLoader()
 
-def main():   
-    class_names, model, transform = customModel.get_model_info() 
+def main():
+    id2label = modelLoader.id2label
+    model = modelLoader.model 
+    transform = modelLoader.transform
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
     print("Starting....")
     label = "UNKNOWN"
@@ -35,7 +37,7 @@ def main():
                 print(logits, probabilities, predicted_class_idx, confidence)
 
             if confidence > confidence_threshold:
-                label = class_names[predicted_class_idx]
+                label = id2label[predicted_class_idx]
             else:
                 label = "Not a family member"
 

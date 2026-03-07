@@ -11,26 +11,43 @@ from mlxtend.plotting import plot_confusion_matrix
 import matplotlib.pyplot as plt
 from pathlib import Path
 from PIL import Image
-from pillow_heif import register_heif_opener
+from pillow_heif import register_heif_opener #to support HEIC files
 
-register_heif_opener()
+register_heif_opener() #to support HEIC files
 
+# Model names
 CUSTOM_MODEL_NAME='kinspotmodel'
+MODEL_NAME='google/vit-base-patch16-224'
+
+# MODEL data directories
 SAVE_DIR=Path(f"model/{CUSTOM_MODEL_NAME}")
 TEST_DIR=Path("data/test") # testing dataset dir
 TRAIN_DIR=Path("data/family_photos/train") # training dataset dir
 VAL_DIR=Path("data/family_photos/train") # validation dataset dir
 
-
-MODEL_NAME='google/vit-base-patch16-224'
+# Use GPU for mac
 DEVICE = torch.device('mps' if torch.mps.is_available() else 'cpu')
+
+
+def get_valid_labels(directory):
+    """
+    A generator that yields valid directory names, 
+    skipping hidden files (.DS_Store) and non-directories.
+    """
+    # We sort to ensure deterministic mapping (ID 0 is always the same person)
+    for entry in sorted(os.listdir(directory)):
+        full_path = os.path.join(directory, entry)
+        if not entry.startswith('.') and os.path.isdir(full_path):
+            yield entry
 
 class KinSpotModel:
 
     def __init__(self):
         # HYPER-PARAMETERS
-        self.class_names = ["anuja", "raja"]
-        self.num_classes = len(self.class_names)  # Number of family/friends
+        self.class_names = list(get_valid_labels(TRAIN_DIR))
+        self.id2label = {i: label for i, label in enumerate(self.class_names)}
+        self.label2id = {val: key for key, val in self.id2label.items()}
+        self.num_classes = len(self.id2label)  # Number of family/friends
         self.batch_size = 16
         self.epochs = 5
         self.learning_rate = 1e-4
@@ -44,7 +61,10 @@ class KinSpotModel:
         if self._is_model_saved():
             self.model = ViTForImageClassification.from_pretrained(SAVE_DIR)
         else:
-            self.model = ViTForImageClassification.from_pretrained(MODEL_NAME,num_labels=self.num_classes,
+            self.model = ViTForImageClassification.from_pretrained(
+                MODEL_NAME,num_labels=self.num_classes,
+                id2label=self.id2label,
+                label2id=self.label2id,
                ignore_mismatched_sizes=True) 
         self.model.to(DEVICE)
         self.optimizer = AdamW(self.model.parameters(), lr=self.learning_rate)
@@ -111,8 +131,9 @@ class KinSpotModel:
         fig.savefig(out_path, dpi=200, bbox_inches="tight")
         plt.close(fig)  
 
-        # Save model
+        # Save model & processor
         self.model.save_pretrained(SAVE_DIR)
+        self.processor.save_pretrained(SAVE_DIR)
 
     def _predict_single_image(self,image_path):
         # Open image
@@ -167,24 +188,26 @@ class KinSpotModel:
         else:
             print(f"Saved model found in {SAVE_DIR} → Skip training")        
         self._test()
+        
 
-    def get_model_info(self):
-        """ returns (class_names, model, transform) """
-        model = ViTForImageClassification.from_pretrained(SAVE_DIR)
-        model.to(DEVICE)
-        model.eval()
-        transform = transforms.Compose([
+class KinspotModelLoader:
+    """ Load the model, processor and id2label from saved model directory """
+    def __init__(self):
+        self.model = ViTForImageClassification.from_pretrained(SAVE_DIR)
+        self.processor = ViTImageProcessor.from_pretrained(SAVE_DIR)
+        self.id2label = self.model.config.id2label
+        self.model.to(DEVICE)
+        self.model.eval()
+        self.transform = transforms.Compose([
             transforms.ToPILImage(),
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
             transforms.Normalize(mean=self.processor.image_mean, std=self.processor.image_std)
         ])
-        return (self.class_names, model,transform)
 
 def main():
     kinSpotModel = KinSpotModel()
     kinSpotModel.process()
-
 
 if __name__ == "__main__":
     main()
