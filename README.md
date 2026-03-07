@@ -9,6 +9,7 @@ Trained and deployed a Vision Transformer for multi-person classification using 
 - uv sync
 
 ##  Data Directory Setup
+  Gather photos for the persons and organize as below...
 ```
 data/ <- overall dataset folder
     train/ <- training images
@@ -23,7 +24,7 @@ data/ <- overall dataset folder
         bro/
             image37.jpeg
             ...
-    validation/ <- testing images
+    validation/ <- validating images
         mom/
             image101.jpeg
             image102.jpeg
@@ -35,8 +36,27 @@ data/ <- overall dataset folder
         bro/
             image167.jpeg
             ...
+     test/  <- test images (ideally not related to training/validation)
+        mom/
+            image201.jpeg
+            image202.jpeg
+            ...
+        dad/
+            image254.jpeg
+            image255.jpeg
+            ...
+        bro/
+            image267.jpeg
+            ...
 ```
 ## Train/Validation/Testing
+ Run the below command to train, validate and save the model. Once the model is saved, it is tested using the test images. Review the test results for accuracy.  
 
 - uv run main.py
+
+## Edge AI Deployment
+ Requires camera for this. Run the command below to leverage the model for identifying the person. 
+
+- uv run kinspot.py 
+
 
