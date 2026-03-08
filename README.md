@@ -1,7 +1,16 @@
 # Real-Time Edge Face Recognition with Vision Transformers
 
-Trained and deployed a Vision Transformer for multi-person classification using a custom dataset. Implemented real-time camera inference, face detection pre-processing, and GPU-accelerated inference on macOS (Metal) with planned TensorRT deployment on NVIDIA Jetson for embedded edge optimization.
+This project implements a real-time face recognition system using Vision Transformers (ViTs) optimized
+for edge devices, specifically NVIDIA Jetson platforms. The system is designed to recognize family members 
+in real-time using a camera feed, leveraging the power of ViTs for accurate face recognition 
+while maintaining efficiency on resource-constrained devices. 
 
+The project includes data pre-processing, model training, and real-time inference components, 
+making it a comprehensive solution for edge AI face recognition applications. It also demonstrates the 
+use of TensorRT for optimizing the model inference, ensuring low latency and high performance.
+
+Demonstrates both Open Set and Closed Set face recognition approaches, allowing for 
+flexibility in handling known and unknown individuals in the recognition process.
 
 ## Project Setup
 
@@ -49,14 +58,23 @@ data/ <- overall dataset folder
             image267.jpeg
             ...
 ```
+## Pre-processing
+ The pre-processing script `preprocess.py` detects faces in the images and crops them to focus on the face region. 
+ This step is crucial for improving the accuracy of the Vision Transformer model by ensuring that it learns from 
+ the relevant features of the images.
+
 ## Train/Validation/Testing
- Run the below command to train, validate and save the model. Once the model is saved, it is tested using the test images. Review the test results for accuracy.  
+ Run the below command to train, validate and save the model. Once the model is saved, 
+ it is tested using the test images. Review the test results for accuracy.  
 
 - uv run main.py
 
-## Edge AI Deployment
- Requires camera for this. Run the command below to leverage the model for identifying the person. 
+## Edge AI Face Recognition
+ You can run the real-time face recognition using the camera. The script `kinspot_*.py` captures video from the camera, 
+ detects faces in real-time, and uses the trained Vision Transformer model to identify the person. 
+This will start the camera and display the video feed with detected faces and their predicted labels using 
+ TensorRT for optimized inference on NVIDIA Jetson devices.
 
-- uv run kinspot.py 
-
+- uv run kinspot_classifier.py -> Based on Closed Set model leveraging the classifier layer. 
+- uv run kinspot_embeddings.py -> Based on Open Set model leveraging the embedding layer and cosine similarity for classification.
 
