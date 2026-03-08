@@ -1,13 +1,15 @@
 import cv2
 import torch
 from face_recognition import FaceDetector, FaceRecognitionSystem
-from main import KinspotModelLoader, DEVICE
+from main import KinspotModelLoader
 import torch.nn.functional as F
 from torch.nn.functional import cosine_similarity
+from config import DEVICE, CONFIDENCE_THRESHOLD
 
 class FacePredictor:
+    """ Predicts the identity of a face using Open-Set model."""
     def __init__(self):
-        self.confidence_threshold = 0.85  # adjust as needed
+        self.confidence_threshold = CONFIDENCE_THRESHOLD  # adjust as needed
         self.modelLoader = KinspotModelLoader()
         self.id2label = self.modelLoader.id2label
         self.model = self.modelLoader.model
