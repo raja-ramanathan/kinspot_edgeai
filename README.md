@@ -61,7 +61,11 @@ data/ <- overall dataset folder
 ## Pre-processing
  The pre-processing script `preprocess.py` detects faces in the images and crops them to focus on the face region. 
  This step is crucial for improving the accuracy of the Vision Transformer model by ensuring that it learns from 
- the relevant features of the images.
+ the relevant features of the images. 
+ 
+It is **optional** to run this script if your dataset is already pre-processed or if you want to use the raw images.
+
+- uv run preprocess.py
 
 ## Train/Validation/Testing
  Run the below command to train, validate and save the model. Once the model is saved, 
