@@ -11,6 +11,8 @@ from mlxtend.plotting import plot_confusion_matrix
 import matplotlib.pyplot as plt
 from pathlib import Path
 from PIL import Image
+from utils import get_valid_labels
+
 from pillow_heif import register_heif_opener #to support HEIC files
 
 register_heif_opener() #to support HEIC files
@@ -28,17 +30,6 @@ VAL_DIR=Path("data/family_photos/train") # validation dataset dir
 # Use GPU for mac
 DEVICE = torch.device('mps' if torch.mps.is_available() else 'cpu')
 
-
-def get_valid_labels(directory):
-    """
-    A generator that yields valid directory names, 
-    skipping hidden files (.DS_Store) and non-directories.
-    """
-    # We sort to ensure deterministic mapping (ID 0 is always the same person)
-    for entry in sorted(os.listdir(directory)):
-        full_path = os.path.join(directory, entry)
-        if not entry.startswith('.') and os.path.isdir(full_path):
-            yield entry
 
 class KinSpotModel:
 
