@@ -190,7 +190,12 @@ class KinspotModelLoader:
         self.model.to(DEVICE)
         self.model.eval()
         self.transform = transforms.Compose([
-            transforms.ToPILImage(),
+            transforms.ToPILImage(), #face to image
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=self.processor.image_mean, std=self.processor.image_std)
+        ])
+        self.imageTransform = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
             transforms.Normalize(mean=self.processor.image_mean, std=self.processor.image_std)
