@@ -1,0 +1,15 @@
+.DS_Store
+.venv/
+.idea/
+**/__pycache__
+
+# Python packaging
+*.egg-info/
+dist/
+build/
+output/
+
+model/
+results/
+data/
+embeddings/
